@@ -202,9 +202,9 @@ public class InventoryService {
         return String.format("OUT-%s-%03d", datePart, count + 1);
     }
 
-    public PageResult<InboundOrderListResponse> queryInboundOrders(int page, int pageSize) {
+    public PageResult<InboundOrderListResponse> queryInboundOrders(String keyword, int page, int pageSize) {
         PageRequest pageRequest = PageRequest.of(page - 1, pageSize, Sort.by("createdAt").descending());
-        Page<InboundOrder> orderPage = inboundOrderRepository.findAll(pageRequest);
+        Page<InboundOrder> orderPage = inboundOrderRepository.search(keyword, pageRequest);
 
         List<InboundOrderListResponse> list = orderPage.getContent().stream()
                 .map(order -> {
@@ -213,6 +213,27 @@ public class InventoryService {
                             .id(order.getId())
                             .orderNo(order.getOrderNo())
                             .supplierName(order.getSupplierName())
+                            .status(order.getStatus())
+                            .itemCount(itemCount)
+                            .createdAt(order.getCreatedAt())
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return new PageResult<>(list, orderPage.getTotalElements(), page, pageSize);
+    }
+
+    public PageResult<InboundOrderListResponse> queryOutboundOrders(String keyword, int page, int pageSize) {
+        PageRequest pageRequest = PageRequest.of(page - 1, pageSize, Sort.by("createdAt").descending());
+        Page<OutboundOrder> orderPage = outboundOrderRepository.search(keyword, pageRequest);
+
+        List<InboundOrderListResponse> list = orderPage.getContent().stream()
+                .map(order -> {
+                    int itemCount = outboundOrderItemRepository.findByOrderId(order.getId()).size();
+                    return InboundOrderListResponse.builder()
+                            .id(order.getId())
+                            .orderNo(order.getOrderNo())
+                            .supplierName(order.getCustomerName())
                             .status(order.getStatus())
                             .itemCount(itemCount)
                             .createdAt(order.getCreatedAt())

@@ -76,6 +76,25 @@ export const createInboundOrder = (data: {
 }) =>
   api.post<any, { code: number; message: string; data: any }>('/inbound-orders', data)
 
+export interface InboundOrderListItem {
+  id: number
+  orderNo: string
+  supplierName: string
+  status: string
+  itemCount: number
+  createdAt: string
+}
+
+export const getInboundOrders = (params: {
+  keyword?: string
+  page?: number
+  pageSize?: number
+}) =>
+  api.get<any, { code: number; data: { list: InboundOrderListItem[]; total: number; page: number; pageSize: number } }>(
+    '/inbound-orders',
+    { params }
+  )
+
 export interface OutboundItemRequest {
   productId: number
   quantity: number
@@ -87,3 +106,22 @@ export const createOutboundOrder = (data: {
   items: OutboundItemRequest[]
 }) =>
   api.post<any, { code: number; message: string; data: any }>('/outbound-orders', data)
+
+export interface OutboundOrderListItem {
+  id: number
+  orderNo: string
+  supplierName: string
+  status: string
+  itemCount: number
+  createdAt: string
+}
+
+export const getOutboundOrders = (params: {
+  keyword?: string
+  page?: number
+  pageSize?: number
+}) =>
+  api.get<any, { code: number; data: { list: OutboundOrderListItem[]; total: number; page: number; pageSize: number } }>(
+    '/outbound-orders',
+    { params }
+  )

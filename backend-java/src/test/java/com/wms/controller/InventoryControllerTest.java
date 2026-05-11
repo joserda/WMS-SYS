@@ -155,7 +155,7 @@ class InventoryControllerTest {
         PageResult<InboundOrderListResponse> pageResult = new PageResult<>(
                 List.of(item), 1, 1, 20);
 
-        when(inventoryService.queryInboundOrders(1, 20)).thenReturn(pageResult);
+        when(inventoryService.queryInboundOrders(isNull(), eq(1), eq(20))).thenReturn(pageResult);
 
         mockMvc.perform(get("/api/inbound-orders")
                         .param("page", "1")

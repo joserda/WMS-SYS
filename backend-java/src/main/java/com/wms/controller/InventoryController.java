@@ -28,9 +28,10 @@ public class InventoryController {
 
     @GetMapping("/inbound-orders")
     public ApiResponse<PageResult<InboundOrderListResponse>> listInboundOrders(
+            @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize) {
-        return ApiResponse.success(inventoryService.queryInboundOrders(page, pageSize));
+        return ApiResponse.success(inventoryService.queryInboundOrders(keyword, page, pageSize));
     }
 
     @GetMapping("/inbound-orders/{id}")
@@ -42,6 +43,14 @@ public class InventoryController {
     public ApiResponse<OutboundOrderResponse> createOutboundOrder(@Valid @RequestBody OutboundOrderCreateRequest request) {
         OutboundOrderResponse response = inventoryService.createOutboundOrder(request);
         return ApiResponse.success("出库单创建成功", response);
+    }
+
+    @GetMapping("/outbound-orders")
+    public ApiResponse<PageResult<InboundOrderListResponse>> listOutboundOrders(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int pageSize) {
+        return ApiResponse.success(inventoryService.queryOutboundOrders(keyword, page, pageSize));
     }
 
     @GetMapping("/inventory")

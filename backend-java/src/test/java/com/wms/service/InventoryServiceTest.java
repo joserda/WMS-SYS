@@ -218,11 +218,11 @@ class InventoryServiceTest {
 
         Page<InboundOrder> page = new PageImpl<>(List.of(order1, order2));
 
-        when(inboundOrderRepository.findAll((PageRequest) any())).thenReturn(page);
+        when(inboundOrderRepository.search(any(), (PageRequest) any())).thenReturn(page);
         when(inboundOrderItemRepository.findByOrderId(1L)).thenReturn(List.of(new InboundOrderItem(), new InboundOrderItem(), new InboundOrderItem()));
         when(inboundOrderItemRepository.findByOrderId(2L)).thenReturn(List.of(new InboundOrderItem()));
 
-        var result = inventoryService.queryInboundOrders(1, 20);
+        var result = inventoryService.queryInboundOrders(null, 1, 20);
 
         assertThat(result.getList()).hasSize(2);
         assertThat(result.getTotal()).isEqualTo(2);
