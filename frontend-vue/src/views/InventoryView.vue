@@ -108,7 +108,7 @@ const getCellClass = ({ row, column }: any) => {
         border
         :row-class-name="getRowClass"
         :cell-class-name="getCellClass"
-        empty-text="暂无库存数据"
+        empty-text="暂无库存数据，请先创建入库单或调整筛选条件"
       >
         <el-table-column prop="productName" label="商品名称" min-width="160" />
         <el-table-column prop="sku" label="SKU" width="140" />
@@ -137,7 +137,9 @@ export default {}
 
 <style scoped>
 .inventory-page {
-  max-width: 1100px;
+  max-width: 1400px;
+  width: 100%;
+  min-height: 420px;
 }
 
 .card-header {

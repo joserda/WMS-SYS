@@ -171,7 +171,7 @@ const onTabChange = (tab: string) => {
           <div class="search-bar">
             <el-input v-model="listKeyword" placeholder="搜索单号 / 客户..." style="width: 320px" clearable @input="onKeywordInput" @clear="onKeywordInput" />
           </div>
-          <el-table :data="orderList" v-loading="listLoading" border empty-text="暂无出库单">
+          <el-table :data="orderList" v-loading="listLoading" border empty-text="暂无出库单，切换到「创建出库单」新建">
             <el-table-column prop="orderNo" label="单号" width="180" />
             <el-table-column prop="supplierName" label="客户" min-width="160" />
             <el-table-column prop="status" label="状态" width="110" />
@@ -193,7 +193,7 @@ export default { components: { Plus, Delete } }
 </script>
 
 <style scoped>
-.outbound-page { max-width: 960px; }
+.outbound-page { max-width: 1400px; width: 100%; min-height: 480px; }
 .card-header { display: flex; align-items: center; }
 .card-title { font-size: 18px; font-weight: 600; color: #303133; }
 .card-title::before { content: ''; display: inline-block; width: 4px; height: 18px; background: #e6a23c; border-radius: 2px; margin-right: 10px; vertical-align: middle; position: relative; top: -1px; }
