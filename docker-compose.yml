@@ -13,36 +13,11 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql
-    networks:
-      - wms-net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U wms -d wms"]
       interval: 5s
       timeout: 5s
       retries: 10
 
-  backend:
-    build:
-      context: ./backend-java
-      dockerfile: Dockerfile
-    container_name: wms-backend
-    environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: wms
-      DB_USER: wms
-      DB_PASSWORD: wms123
-    ports:
-      - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - wms-net
-
 volumes:
   pgdata:
-
-networks:
-  wms-net:
-    driver: bridge
