@@ -1,73 +1,186 @@
 <script setup lang="ts">
-/**
- * ============================================
- *  库存查询页 — 候选人需要实现（任务2）
- * ============================================
- *
- * 需求：
- * 1. 搜索栏：商品名称/SKU 模糊搜索 + 仓库下拉筛选
- * 2. 表格展示：商品名称、SKU、库位编码、仓库名、库存数量、更新时间
- * 3. 库存数量 < 10 的行高亮为红色
- * 4. 支持分页
- *
- * 建议使用 AI 协作完成此页面，参考 ProductsView.vue 的实现风格
- */
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { getInventory, getWarehouses, type Warehouse } from '@/api'
 
 const keyword = ref('')
-const warehouseId = ref<number | undefined>()
+const warehouseId = ref<number | undefined>(undefined)
 const loading = ref(false)
-const inventoryList = ref<any[]>([])
+const list = ref<any[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(20)
+const warehouses = ref<Warehouse[]>([])
 
-// TODO: 候选人实现 loadInventory 函数
-const loadInventory = async () => {
-  // 提示：调用 getInventory({ keyword, warehouseId, page, pageSize })
+onMounted(async () => {
+  try {
+    const res = await getWarehouses()
+    warehouses.value = res.data
+  } catch { /* */ }
+  loadData()
+})
+
+const loadData = async () => {
+  loading.value = true
+  try {
+    const res = await getInventory({
+      keyword: keyword.value || undefined,
+      warehouseId: warehouseId.value,
+      page: page.value,
+      pageSize: pageSize.value,
+    })
+    list.value = res.data.list || []
+    total.value = res.data.total || 0
+  } catch (e: any) {
+    ElMessage.error('加载库存失败: ' + (e.response?.data?.message || e.message))
+  } finally {
+    loading.value = false
+  }
 }
 
-// TODO: 候选人实现表格行样式
-const getRowStyle = (row: any) => {
-  // 提示：当 row.quantity < 10 时返回红色样式
-  return {}
+const onSearch = () => {
+  page.value = 1
+  loadData()
+}
+
+const onPageChange = () => {
+  loadData()
+}
+
+const getRowClass = ({ row }: any) => {
+  if (row.quantity < 10) return 'row-low-stock'
+  return ''
+}
+
+const getCellClass = ({ row, column }: any) => {
+  if (column.property === 'quantity' && row.quantity < 10) {
+    return 'cell-low-stock'
+  }
+  return ''
 }
 </script>
 
 <template>
-  <div>
-    <h3> 库存查询</h3>
+  <div class="inventory-page">
+    <el-card shadow="never">
+      <template #header>
+        <div class="card-header">
+          <span class="card-title">库存查询</span>
+        </div>
+      </template>
 
-    <!-- 搜索栏 — 候选人实现 -->
-    <div style="display: flex; gap: 12px; margin-bottom: 16px">
-      <el-input v-model="keyword" placeholder="搜索商品名称/SKU..." style="width: 300px" clearable />
-      <el-select v-model="warehouseId" placeholder="选择仓库" clearable style="width: 200px">
-        <!-- TODO: 加载仓库列表 -->
-      </el-select>
-      <el-button type="primary" @click="loadInventory">查询</el-button>
-    </div>
+      <div class="search-bar">
+        <el-input
+          v-model="keyword"
+          placeholder="搜索商品名称 / SKU..."
+          style="width: 300px"
+          clearable
+          @keyup.enter="onSearch"
+          @clear="onSearch"
+        />
+        <el-select
+          v-model="warehouseId"
+          placeholder="全部仓库"
+          clearable
+          style="width: 180px"
+          @change="onSearch"
+        >
+          <el-option
+            v-for="wh in warehouses"
+            :key="wh.id"
+            :label="wh.name"
+            :value="wh.id"
+          />
+        </el-select>
+        <el-button type="primary" @click="onSearch">
+          <el-icon style="margin-right: 4px"><Search /></el-icon>
+          查询
+        </el-button>
+      </div>
 
-    <!-- 表格 — 候选人实现 -->
-    <el-table :data="inventoryList" v-loading="loading" border stripe :row-style="getRowStyle">
-      <el-table-column prop="productName" label="商品名称" />
-      <el-table-column prop="sku" label="SKU" width="150" />
-      <el-table-column prop="locationCode" label="库位编码" width="150" />
-      <el-table-column prop="warehouseName" label="仓库" width="120" />
-      <el-table-column prop="quantity" label="库存数量" width="100" />
-      <el-table-column prop="updatedAt" label="更新时间" width="180" />
-    </el-table>
+      <el-table
+        :data="list"
+        v-loading="loading"
+        border
+        stripe
+        :row-class-name="getRowClass"
+        :cell-class-name="getCellClass"
+        empty-text="暂无库存数据"
+      >
+        <el-table-column prop="productName" label="商品名称" min-width="160" />
+        <el-table-column prop="sku" label="SKU" width="140" />
+        <el-table-column prop="locationCode" label="库位编码" width="140" />
+        <el-table-column prop="warehouseName" label="仓库" width="120" />
+        <el-table-column prop="quantity" label="库存数量" width="100" align="center" />
+        <el-table-column prop="updatedAt" label="更新时间" width="180" />
+      </el-table>
 
-    <!-- 分页 — 候选人实现 -->
-    <div style="margin-top: 16px; text-align: right">
-      <el-pagination
-        v-model:current-page="page"
-        :page-size="pageSize"
-        :total="total"
-        layout="total, prev, pager, next"
-        @current-change="loadInventory"
-      />
-    </div>
-
-    <el-empty v-if="!loading && inventoryList.length === 0" description="暂无库存数据，请先完成入库操作" />
+      <div class="pagination-bar">
+        <el-pagination
+          v-model:current-page="page"
+          :page-size="pageSize"
+          :total="total"
+          layout="total, prev, pager, next"
+          @current-change="onPageChange"
+        />
+      </div>
+    </el-card>
   </div>
 </template>
+
+<script lang="ts">
+import { Search } from '@element-plus/icons-vue'
+export default { components: { Search } }
+</script>
+
+<style scoped>
+.inventory-page {
+  max-width: 1100px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.card-title::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 18px;
+  background: #409eff;
+  border-radius: 2px;
+  margin-right: 10px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
+.search-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+:deep(.row-low-stock) {
+  background-color: #fef0f0 !important;
+}
+
+:deep(.cell-low-stock) {
+  color: #f56c6c;
+  font-weight: 700;
+}
+
+.pagination-bar {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+</style>

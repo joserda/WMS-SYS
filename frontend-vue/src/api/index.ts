@@ -1,7 +1,5 @@
 import api from './client'
 
-// ============ 商品（参考实现） ============
-
 export interface Product {
   id: number
   name: string
@@ -26,9 +24,6 @@ export const updateProduct = (id: number, data: { name: string; unit?: string })
 export const deleteProduct = (id: number) =>
   api.delete(`/products/${id}`)
 
-
-// ============ 仓库 & 库位 ============
-
 export interface Warehouse {
   id: number
   code: string
@@ -47,9 +42,6 @@ export const getWarehouses = () =>
 
 export const getLocations = (warehouseId: number) =>
   api.get<any, { code: number; data: Location[] }>(`/warehouses/${warehouseId}/locations`)
-
-
-// ============ 库存查询（候选人实现） ============
 
 export interface InventoryItem {
   productId: number
@@ -72,9 +64,6 @@ export const getInventory = (params: {
     { params }
   )
 
-
-// ============ 入库单（候选人实现） ============
-
 export interface InboundItemRequest {
   productId: number
   quantity: number
@@ -85,4 +74,4 @@ export const createInboundOrder = (data: {
   supplierName: string
   items: InboundItemRequest[]
 }) =>
-  api.post('/inbound-orders', data)
+  api.post<any, { code: number; message: string; data: any }>('/inbound-orders', data)
