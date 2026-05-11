@@ -1,6 +1,7 @@
 package com.wms.controller;
 
 import com.wms.common.ApiResponse;
+import com.wms.common.PageResult;
 import com.wms.dto.ProductCreateRequest;
 import com.wms.dto.ProductResponse;
 import com.wms.dto.ProductUpdateRequest;
@@ -9,11 +10,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
-/**
- * 商品管理 Controller — 参考实现
- */
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
@@ -22,9 +18,11 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    public ApiResponse<List<ProductResponse>> list(
-            @RequestParam(required = false) String keyword) {
-        return ApiResponse.success(productService.list(keyword));
+    public ApiResponse<PageResult<ProductResponse>> list(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int pageSize) {
+        return ApiResponse.success(productService.list(keyword, page, pageSize));
     }
 
     @GetMapping("/{id}")

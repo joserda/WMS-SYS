@@ -1,6 +1,7 @@
 package com.wms.service;
 
 import com.wms.common.BusinessException;
+import com.wms.common.PageResult;
 import com.wms.dto.ProductCreateRequest;
 import com.wms.dto.ProductResponse;
 import com.wms.dto.ProductUpdateRequest;
@@ -9,10 +10,12 @@ import com.wms.repository.InventoryRepository;
 import com.wms.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -27,11 +30,12 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final InventoryRepository inventoryRepository;
 
-    public List<ProductResponse> list(String keyword) {
-        List<Product> products = productRepository.search(keyword);
-        return products.stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+    public PageResult<ProductResponse> list(String keyword, int page, int pageSize) {
+        PageRequest pageRequest = PageRequest.of(page - 1, pageSize, Sort.by("id").ascending());
+        Page<Product> productPage = productRepository.search(keyword, pageRequest);
+        return new PageResult<>(
+                productPage.getContent().stream().map(this::toResponse).collect(Collectors.toList()),
+                productPage.getTotalElements(), page, pageSize);
     }
 
     public ProductResponse getById(Long id) {

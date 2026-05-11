@@ -9,8 +9,15 @@ export interface Product {
   updatedAt: string
 }
 
-export const getProducts = (keyword?: string) =>
-  api.get<any, { code: number; data: Product[] }>('/products', { params: { keyword } })
+export const getProducts = (params?: {
+  keyword?: string
+  page?: number
+  pageSize?: number
+}) =>
+  api.get<any, { code: number; data: { list: Product[]; total: number; page: number; pageSize: number } }>(
+    '/products',
+    { params }
+  )
 
 export const getProduct = (id: number) =>
   api.get<any, { code: number; data: Product }>(`/products/${id}`)

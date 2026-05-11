@@ -1,21 +1,8 @@
 <script setup lang="ts">
-/**
- * 商品管理页 — 参考实现
- *
- * 展示了：
- * - 列表 + 搜索
- * - 新增 / 编辑弹窗
- * - 删除确认
- * - 分页（前端分页，简单示例）
- *
- * ️ BUG 预埋点：编辑后返回列表时页码会重置为第1页
- *   候选人需要在任务3中修复此问题
- */
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getProducts, createProduct, updateProduct, deleteProduct, type Product } from '@/api'
 
-const products = ref<Product[]>([])
 const keyword = ref('')
 const loading = ref(false)
 const dialogVisible = ref(false)
@@ -23,13 +10,21 @@ const dialogTitle = ref('新增商品')
 const form = ref({ id: 0, name: '', sku: '', unit: '个' })
 const currentPage = ref(1)
 const pageSize = ref(10)
+const total = ref(0)
+const products = ref<Product[]>([])
 
-// 搜索
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+
 const loadProducts = async () => {
   loading.value = true
   try {
-    const res = await getProducts(keyword.value || undefined)
-    products.value = res.data
+    const res = await getProducts({
+      keyword: keyword.value || undefined,
+      page: currentPage.value,
+      pageSize: pageSize.value,
+    })
+    products.value = res.data.list || []
+    total.value = res.data.total || 0
   } catch (e: any) {
     ElMessage.error('加载失败: ' + (e.response?.data?.message || e.message))
   } finally {
@@ -37,31 +32,29 @@ const loadProducts = async () => {
   }
 }
 
-// 分页后的数据
-const pagedProducts = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return products.value.slice(start, start + pageSize.value)
-})
+const onKeywordInput = () => {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => { currentPage.value = 1; loadProducts() }, 300)
+}
 
-import { computed } from 'vue'
+const onPageChange = () => {
+  loadProducts()
+}
 
 onMounted(loadProducts)
 
-// 新增
 const handleAdd = () => {
   dialogTitle.value = '新增商品'
   form.value = { id: 0, name: '', sku: '', unit: '个' }
   dialogVisible.value = true
 }
 
-// 编辑
 const handleEdit = (product: Product) => {
   dialogTitle.value = '编辑商品'
   form.value = { id: product.id, name: product.name, sku: product.sku, unit: product.unit }
   dialogVisible.value = true
 }
 
-// 提交
 const handleSubmit = async () => {
   try {
     if (form.value.id) {
@@ -81,7 +74,6 @@ const handleSubmit = async () => {
   }
 }
 
-// 删除
 const handleDelete = async (id: number) => {
   try {
     await ElMessageBox.confirm('确定删除该商品吗？', '确认删除', { type: 'warning' })
@@ -96,16 +88,13 @@ const handleDelete = async (id: number) => {
 
 <template>
   <div>
-    <!-- 搜索栏 -->
     <div style="display: flex; gap: 12px; margin-bottom: 16px">
       <el-input v-model="keyword" placeholder="搜索商品名称/SKU..." style="width: 300px" clearable
-        @keyup.enter="loadProducts" @clear="loadProducts" />
-      <el-button type="primary" @click="loadProducts">搜索</el-button>
+        @input="onKeywordInput" @clear="onKeywordInput" />
       <el-button type="success" @click="handleAdd">新增商品</el-button>
     </div>
 
-    <!-- 表格 -->
-    <el-table :data="pagedProducts" v-loading="loading" border stripe>
+    <el-table :data="products" v-loading="loading" border stripe>
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="name" label="商品名称" />
       <el-table-column prop="sku" label="SKU" width="150" />
@@ -118,17 +107,16 @@ const handleDelete = async (id: number) => {
       </el-table-column>
     </el-table>
 
-    <!-- 分页 -->
     <div style="margin-top: 16px; text-align: right">
       <el-pagination
         v-model:current-page="currentPage"
         :page-size="pageSize"
-        :total="products.length"
+        :total="total"
         layout="total, prev, pager, next"
+        @current-change="onPageChange"
       />
     </div>
 
-    <!-- 新增/编辑弹窗 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
       <el-form :model="form" label-width="80px">
         <el-form-item label="商品名称">

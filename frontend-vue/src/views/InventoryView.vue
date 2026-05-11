@@ -12,6 +12,8 @@ const page = ref(1)
 const pageSize = ref(20)
 const warehouses = ref<Warehouse[]>([])
 
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+
 onMounted(async () => {
   try {
     const res = await getWarehouses()
@@ -41,6 +43,11 @@ const loadData = async () => {
 const onSearch = () => {
   page.value = 1
   loadData()
+}
+
+const onKeywordInput = () => {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => { page.value = 1; loadData() }, 300)
 }
 
 const onPageChange = () => {
@@ -75,8 +82,8 @@ const getCellClass = ({ row, column }: any) => {
           placeholder="搜索商品名称 / SKU..."
           style="width: 300px"
           clearable
-          @keyup.enter="onSearch"
-          @clear="onSearch"
+          @input="onKeywordInput"
+          @clear="onKeywordInput"
         />
         <el-select
           v-model="warehouseId"
@@ -92,10 +99,7 @@ const getCellClass = ({ row, column }: any) => {
             :value="wh.id"
           />
         </el-select>
-        <el-button type="primary" @click="onSearch">
-          <el-icon style="margin-right: 4px"><Search /></el-icon>
-          查询
-        </el-button>
+        <el-button type="primary" @click="onSearch">查询</el-button>
       </div>
 
       <el-table
@@ -128,8 +132,7 @@ const getCellClass = ({ row, column }: any) => {
 </template>
 
 <script lang="ts">
-import { Search } from '@element-plus/icons-vue'
-export default { components: { Search } }
+export default {}
 </script>
 
 <style scoped>

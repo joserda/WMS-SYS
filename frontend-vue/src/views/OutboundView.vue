@@ -32,8 +32,8 @@ let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 onMounted(async () => {
   try {
-    const [prodRes, whRes] = await Promise.all([getProducts(), getWarehouses()])
-    products.value = prodRes.data
+    const [prodRes, whRes] = await Promise.all([getProducts({ pageSize: 500 }), getWarehouses()])
+    products.value = prodRes.data.list || prodRes.data
     warehouses.value = whRes.data
   } catch {
     ElMessage.error('加载基础数据失败')
