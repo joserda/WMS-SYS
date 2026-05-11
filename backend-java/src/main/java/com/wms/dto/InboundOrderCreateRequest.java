@@ -24,7 +24,7 @@ public class InboundOrderCreateRequest {
 }
 
 @Data
-class InboundItemRequest {
+public class InboundItemRequest {
     @NotNull(message = "商品ID不能为空")
     private Long productId;
 
