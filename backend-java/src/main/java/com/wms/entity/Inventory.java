@@ -12,6 +12,9 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "inventory", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"product_id", "location_code"})
+}, indexes = {
+    @Index(name = "idx_inventory_product_id", columnList = "product_id"),
+    @Index(name = "idx_inventory_updated_at", columnList = "updated_at")
 })
 @Data
 @NoArgsConstructor

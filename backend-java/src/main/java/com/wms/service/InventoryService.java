@@ -164,8 +164,10 @@ public class InventoryService {
                 .build();
     }
 
-    public List<InventoryResponse> queryInventory(String keyword, Long warehouseId,
+    public PageResult<InventoryResponse> queryInventory(String keyword, Long warehouseId,
                                                    int page, int pageSize) {
-        throw new UnsupportedOperationException("请实现库存查询功能（任务2）");
+        PageRequest pageRequest = PageRequest.of(page - 1, pageSize, Sort.by("updatedAt").descending());
+        Page<InventoryResponse> result = inventoryRepository.search(keyword, warehouseId, pageRequest);
+        return new PageResult<>(result.getContent(), result.getTotalElements(), page, pageSize);
     }
 }
