@@ -1,0 +1,216 @@
+/* ═══════════════════════════════════════
+   Precision Lab — WMS Global Styles
+   ═══════════════════════════════════════ */
+
+/* ---- CSS Variables ---- */
+:root {
+  --c-primary: #409eff;
+  --c-primary-deep: #3a7bd5;
+  --c-primary-light: #ecf5ff;
+  --c-text: #2c3e50;
+  --c-text-secondary: #606266;
+  --c-border: #e8ecf1;
+  --c-bg-page: #f0f4f8;
+  --c-bg-card: #ffffff;
+  --c-shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.06);
+  --c-shadow-md: 0 4px 20px rgba(0, 0, 0, 0.10);
+  --c-shadow-header: 0 2px 14px rgba(64, 158, 255, 0.18);
+  --radius-card: 12px;
+  --radius-tag: 20px;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+}
+
+/* ---- Page Background ---- */
+body {
+  margin: 0;
+  background: var(--c-bg-page);
+  font-family: 'PingFang SC', 'Helvetica Neue', 'Hiragino Sans GB', Arial, sans-serif;
+  color: var(--c-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Header ---- */
+.el-header {
+  background: linear-gradient(135deg, var(--c-primary-deep), var(--c-primary)) !important;
+  box-shadow: var(--c-shadow-header) !important;
+  position: relative;
+  z-index: 10;
+}
+
+.el-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+}
+
+.el-header h2 {
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+/* ---- Header Menu ---- */
+.el-header .el-menu {
+  background: transparent !important;
+}
+
+.el-header .el-menu-item {
+  border-radius: 8px;
+  margin: 0 2px;
+  transition: background 0.25s, color 0.25s;
+}
+
+.el-header .el-menu-item:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* ---- Cards ---- */
+.el-card {
+  border-radius: var(--radius-card) !important;
+  box-shadow: var(--c-shadow-sm) !important;
+  border: 1px solid var(--c-border) !important;
+  transition: box-shadow 0.3s ease;
+  overflow: hidden;
+}
+
+.el-card:hover {
+  box-shadow: var(--c-shadow-md) !important;
+}
+
+.el-card__header {
+  border-bottom: 1px solid var(--c-border) !important;
+  padding: 16px 20px !important;
+}
+
+.el-card__body {
+  padding: 20px !important;
+}
+
+/* ---- Tables ---- */
+.el-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.el-table th.el-table__cell {
+  background: #f0f7ff !important;
+  color: var(--c-text-secondary);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+.el-table--border .el-table__inner-wrapper::after {
+  display: none;
+}
+
+.el-table .el-table__row:hover > td {
+  background: #f5f9ff !important;
+}
+
+/* ---- Order Number Mono ---- */
+.el-table .el-table__body-wrapper td:first-child {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #4a6fa5;
+  letter-spacing: -0.02em;
+}
+
+/* ---- Status Tags ---- */
+.el-tag {
+  border-radius: var(--radius-tag) !important;
+  padding: 0 12px !important;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ---- Buttons ---- */
+.el-button--primary {
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.25);
+  transition: box-shadow 0.25s, transform 0.15s;
+}
+
+.el-button--primary:hover {
+  box-shadow: 0 4px 14px rgba(64, 158, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.el-button--success {
+  box-shadow: 0 2px 8px rgba(103, 194, 58, 0.25);
+}
+
+.el-button--danger {
+  box-shadow: 0 2px 8px rgba(245, 108, 108, 0.25);
+}
+
+/* ---- Inputs & Selects ---- */
+.el-input__wrapper, .el-select .el-input__wrapper {
+  border-radius: 8px !important;
+  transition: box-shadow 0.25s;
+}
+
+.el-input__wrapper:hover, .el-select:hover .el-input__wrapper {
+  box-shadow: 0 0 0 1px var(--c-primary) inset;
+}
+
+.el-input.is-focus .el-input__wrapper,
+.el-select .el-input.is-focus .el-input__wrapper {
+  box-shadow: 0 0 0 1px var(--c-primary) inset;
+}
+
+/* ---- Pagination ---- */
+.el-pagination {
+  margin-top: 4px;
+}
+
+.el-pagination .el-pager li.is-active {
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(64, 158, 255, 0.3);
+}
+
+/* ---- Dialogs ---- */
+.el-dialog {
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.el-dialog__header {
+  border-bottom: 1px solid var(--c-border);
+  padding: 18px 24px;
+}
+
+/* ---- Tabs ---- */
+.el-tabs__nav-wrap::after {
+  height: 1px !important;
+  background: var(--c-border) !important;
+}
+
+.el-tabs__item {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.el-tabs__item.is-active {
+  color: var(--c-primary) !important;
+}
+
+/* ---- Empty State ---- */
+.el-empty__description {
+  color: #a8abb2;
+}
+
+/* ---- Fade-in page transition ---- */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.el-main > div {
+  animation: fadeInUp 0.4s ease both;
+}
+
+/* ---- Low Stock Highlight (inventory) ---- */
+.el-table .row-low-stock > td {
+  background-color: #fef0f0 !important;
+}

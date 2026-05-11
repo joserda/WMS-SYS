@@ -3,16 +3,19 @@
 
 <template>
   <el-container style="min-height: 100vh">
-    <el-header style="background: #409eff; color: white; display: flex; align-items: center; padding: 0 20px">
-      <h2 style="margin: 0"> WMS 仓储管理系统</h2>
+    <el-header style="color: white; display: flex; align-items: center; padding: 0 20px">
+      <div class="brand">
+        <span class="brand-icon">◈</span>
+        <h2>WMS 仓储管理系统</h2>
+      </div>
       <el-menu
         mode="horizontal"
         :default-active="$route.path"
         router
         style="margin-left: 40px; border-bottom: none; flex: 1"
-        background-color="#409eff"
-        text-color="#fff"
-        active-text-color="#ffd04b"
+        background-color="transparent"
+        text-color="rgba(255,255,255,0.85)"
+        active-text-color="#fff"
       >
         <el-menu-item index="/products">商品管理</el-menu-item>
         <el-menu-item index="/inventory">库存查询</el-menu-item>
@@ -21,15 +24,27 @@
       </el-menu>
     </el-header>
 
-    <el-main style="padding: 20px">
+    <el-main style="padding: 24px">
       <router-view />
     </el-main>
   </el-container>
 </template>
 
 <style>
-body {
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-icon {
+  font-size: 20px;
+  opacity: 0.7;
+}
+
+.brand h2 {
   margin: 0;
-  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', Arial, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.06em;
 }
 </style>
