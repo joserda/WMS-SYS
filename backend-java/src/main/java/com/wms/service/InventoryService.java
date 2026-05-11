@@ -7,13 +7,20 @@ import com.wms.dto.InboundOrderListResponse;
 import com.wms.dto.InboundOrderResponse;
 import com.wms.dto.InboundItemRequest;
 import com.wms.dto.InventoryResponse;
+import com.wms.dto.OutboundOrderCreateRequest;
+import com.wms.dto.OutboundItemRequest;
+import com.wms.dto.OutboundOrderResponse;
 import com.wms.entity.InboundOrder;
 import com.wms.entity.InboundOrderItem;
+import com.wms.entity.OutboundOrder;
+import com.wms.entity.OutboundOrderItem;
 import com.wms.entity.Product;
 import com.wms.repository.InboundOrderItemRepository;
 import com.wms.repository.InboundOrderRepository;
 import com.wms.repository.InventoryRepository;
 import com.wms.repository.LocationRepository;
+import com.wms.repository.OutboundOrderItemRepository;
+import com.wms.repository.OutboundOrderRepository;
 import com.wms.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,12 +45,14 @@ public class InventoryService {
     private final InventoryRepository inventoryRepository;
     private final InboundOrderRepository inboundOrderRepository;
     private final InboundOrderItemRepository inboundOrderItemRepository;
+    private final OutboundOrderRepository outboundOrderRepository;
+    private final OutboundOrderItemRepository outboundOrderItemRepository;
     private final ProductRepository productRepository;
     private final LocationRepository locationRepository;
 
     @Transactional
     public InboundOrderResponse createInboundOrder(InboundOrderCreateRequest request) {
-        String orderNo = generateOrderNo();
+        String orderNo = generateInboundOrderNo();
 
         List<Product> products = new ArrayList<>();
         for (InboundItemRequest item : request.getItems()) {
@@ -105,13 +114,92 @@ public class InventoryService {
                 .build();
     }
 
-    private String generateOrderNo() {
+    @Transactional
+    public OutboundOrderResponse createOutboundOrder(OutboundOrderCreateRequest request) {
+        String orderNo = generateOutboundOrderNo();
+
+        List<Product> products = new ArrayList<>();
+        for (OutboundItemRequest item : request.getItems()) {
+            Product product = productRepository.findById(item.getProductId())
+                    .orElseThrow(() -> new BusinessException(404, "商品不存在: id=" + item.getProductId()));
+            products.add(product);
+        }
+
+        for (OutboundItemRequest item : request.getItems()) {
+            if (!locationRepository.existsByCode(item.getLocationCode())) {
+                throw new BusinessException(404, "库位不存在: " + item.getLocationCode());
+            }
+        }
+
+        OutboundOrder order = OutboundOrder.builder()
+                .orderNo(orderNo)
+                .customerName(request.getCustomerName())
+                .status("COMPLETED")
+                .build();
+        order = outboundOrderRepository.save(order);
+
+        List<OutboundOrderItem> orderItems = new ArrayList<>();
+        for (OutboundItemRequest item : request.getItems()) {
+            OutboundOrderItem orderItem = OutboundOrderItem.builder()
+                    .orderId(order.getId())
+                    .productId(item.getProductId())
+                    .quantity(item.getQuantity())
+                    .locationCode(item.getLocationCode())
+                    .build();
+            orderItems.add(orderItem);
+        }
+        outboundOrderItemRepository.saveAll(orderItems);
+
+        for (int i = 0; i < request.getItems().size(); i++) {
+            OutboundItemRequest item = request.getItems().get(i);
+            Product product = products.get(i);
+            int affected = inventoryRepository.deductQuantity(
+                    item.getProductId(), item.getLocationCode(), item.getQuantity());
+            if (affected == 0) {
+                throw new BusinessException("库存不足: " + product.getName()
+                        + " @ " + item.getLocationCode());
+            }
+        }
+
+        List<OutboundOrderResponse.OutboundItemResponse> itemResponses = new ArrayList<>();
+        for (int i = 0; i < request.getItems().size(); i++) {
+            OutboundItemRequest item = request.getItems().get(i);
+            Product product = products.get(i);
+            itemResponses.add(OutboundOrderResponse.OutboundItemResponse.builder()
+                    .productId(product.getId())
+                    .productName(product.getName())
+                    .quantity(item.getQuantity())
+                    .locationCode(item.getLocationCode())
+                    .build());
+        }
+
+        log.info("出库单创建成功: orderNo={}, items={}", orderNo, request.getItems().size());
+        return OutboundOrderResponse.builder()
+                .id(order.getId())
+                .orderNo(order.getOrderNo())
+                .customerName(order.getCustomerName())
+                .status(order.getStatus())
+                .items(itemResponses)
+                .createdAt(order.getCreatedAt())
+                .build();
+    }
+
+    private String generateInboundOrderNo() {
         LocalDate today = LocalDate.now();
         LocalDateTime todayStart = today.atStartOfDay();
         LocalDateTime tomorrowStart = today.plusDays(1).atStartOfDay();
         long count = inboundOrderRepository.countTodayOrders(todayStart, tomorrowStart);
         String datePart = today.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         return String.format("IN-%s-%03d", datePart, count + 1);
+    }
+
+    private String generateOutboundOrderNo() {
+        LocalDate today = LocalDate.now();
+        LocalDateTime todayStart = today.atStartOfDay();
+        LocalDateTime tomorrowStart = today.plusDays(1).atStartOfDay();
+        long count = outboundOrderRepository.countTodayOrders(todayStart, tomorrowStart);
+        String datePart = today.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        return String.format("OUT-%s-%03d", datePart, count + 1);
     }
 
     public PageResult<InboundOrderListResponse> queryInboundOrders(int page, int pageSize) {

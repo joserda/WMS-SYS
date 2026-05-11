@@ -5,14 +5,21 @@ import com.wms.dto.InboundOrderCreateRequest;
 import com.wms.dto.InboundOrderListResponse;
 import com.wms.dto.InboundOrderResponse;
 import com.wms.dto.InboundItemRequest;
+import com.wms.dto.OutboundOrderCreateRequest;
+import com.wms.dto.OutboundItemRequest;
+import com.wms.dto.OutboundOrderResponse;
 import com.wms.entity.InboundOrder;
 import com.wms.entity.InboundOrderItem;
 import com.wms.entity.Location;
+import com.wms.entity.OutboundOrder;
+import com.wms.entity.OutboundOrderItem;
 import com.wms.entity.Product;
 import com.wms.repository.InboundOrderItemRepository;
 import com.wms.repository.InboundOrderRepository;
 import com.wms.repository.InventoryRepository;
 import com.wms.repository.LocationRepository;
+import com.wms.repository.OutboundOrderItemRepository;
+import com.wms.repository.OutboundOrderRepository;
 import com.wms.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +54,12 @@ class InventoryServiceTest {
 
     @Mock
     private InboundOrderItemRepository inboundOrderItemRepository;
+
+    @Mock
+    private OutboundOrderRepository outboundOrderRepository;
+
+    @Mock
+    private OutboundOrderItemRepository outboundOrderItemRepository;
 
     @Mock
     private ProductRepository productRepository;
@@ -250,5 +263,93 @@ class InventoryServiceTest {
         assertThatThrownBy(() -> inventoryService.getInboundOrderById(999L))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("入库单不存在");
+    }
+
+    @Test
+    void createOutboundOrder_shouldSucceed() {
+        OutboundItemRequest item = new OutboundItemRequest();
+        item.setProductId(1L);
+        item.setQuantity(10);
+        item.setLocationCode("WH-A-01-01");
+
+        OutboundOrderCreateRequest request = new OutboundOrderCreateRequest();
+        request.setCustomerName("客户X");
+        request.setItems(List.of(item));
+
+        when(outboundOrderRepository.countTodayOrders(any(), any())).thenReturn(0L);
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product1));
+        when(locationRepository.existsByCode("WH-A-01-01")).thenReturn(true);
+
+        OutboundOrder savedOrder = OutboundOrder.builder()
+                .id(1L).orderNo("OUT-20260511-001")
+                .customerName("客户X").status("COMPLETED").build();
+        savedOrder.setCreatedAt(LocalDateTime.now());
+        when(outboundOrderRepository.save(any(OutboundOrder.class))).thenReturn(savedOrder);
+        when(outboundOrderItemRepository.saveAll(anyList())).thenReturn(Collections.emptyList());
+        when(inventoryRepository.deductQuantity(1L, "WH-A-01-01", 10)).thenReturn(1);
+
+        OutboundOrderResponse response = inventoryService.createOutboundOrder(request);
+
+        assertThat(response.getOrderNo()).startsWith("OUT-");
+        assertThat(response.getCustomerName()).isEqualTo("客户X");
+        assertThat(response.getStatus()).isEqualTo("COMPLETED");
+        assertThat(response.getItems()).hasSize(1);
+        assertThat(response.getItems().get(0).getProductName()).isEqualTo("蓝牙耳机 Pro");
+
+        verify(outboundOrderRepository).save(any(OutboundOrder.class));
+        verify(outboundOrderItemRepository).saveAll(anyList());
+        verify(inventoryRepository).deductQuantity(1L, "WH-A-01-01", 10);
+    }
+
+    @Test
+    void createOutboundOrder_shouldFailWhenInsufficientStock() {
+        OutboundItemRequest item = new OutboundItemRequest();
+        item.setProductId(1L);
+        item.setQuantity(999);
+        item.setLocationCode("WH-A-01-01");
+
+        OutboundOrderCreateRequest request = new OutboundOrderCreateRequest();
+        request.setCustomerName("客户Y");
+        request.setItems(List.of(item));
+
+        when(outboundOrderRepository.countTodayOrders(any(), any())).thenReturn(0L);
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product1));
+        when(locationRepository.existsByCode("WH-A-01-01")).thenReturn(true);
+
+        OutboundOrder savedOrder = OutboundOrder.builder()
+                .id(1L).orderNo("OUT-20260511-001")
+                .customerName("客户Y").status("COMPLETED").build();
+        savedOrder.setCreatedAt(LocalDateTime.now());
+        when(outboundOrderRepository.save(any(OutboundOrder.class))).thenReturn(savedOrder);
+        when(outboundOrderItemRepository.saveAll(anyList())).thenReturn(Collections.emptyList());
+        when(inventoryRepository.deductQuantity(1L, "WH-A-01-01", 999)).thenReturn(0);
+
+        assertThatThrownBy(() -> inventoryService.createOutboundOrder(request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("库存不足");
+
+        verify(inventoryRepository).deductQuantity(1L, "WH-A-01-01", 999);
+    }
+
+    @Test
+    void createOutboundOrder_shouldFailWhenProductNotFound() {
+        OutboundItemRequest item = new OutboundItemRequest();
+        item.setProductId(99L);
+        item.setQuantity(10);
+        item.setLocationCode("WH-A-01-01");
+
+        OutboundOrderCreateRequest request = new OutboundOrderCreateRequest();
+        request.setCustomerName("客户Z");
+        request.setItems(List.of(item));
+
+        when(outboundOrderRepository.countTodayOrders(any(), any())).thenReturn(0L);
+        when(productRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> inventoryService.createOutboundOrder(request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("商品不存在");
+
+        verify(outboundOrderRepository, never()).save(any());
+        verify(inventoryRepository, never()).deductQuantity(anyLong(), anyString(), anyInt());
     }
 }

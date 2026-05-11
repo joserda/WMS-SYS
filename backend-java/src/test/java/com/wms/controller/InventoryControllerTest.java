@@ -7,6 +7,7 @@ import com.wms.dto.InboundOrderCreateRequest;
 import com.wms.dto.InboundItemRequest;
 import com.wms.dto.InboundOrderListResponse;
 import com.wms.dto.InboundOrderResponse;
+import com.wms.dto.OutboundOrderResponse;
 import com.wms.service.InventoryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -198,5 +199,72 @@ class InventoryControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(404))
                 .andExpect(jsonPath("$.message").value("入库单不存在: id=999"));
+    }
+
+    @Test
+    void createOutboundOrder_shouldReturnSuccess() throws Exception {
+        OutboundOrderResponse response = OutboundOrderResponse.builder()
+                .id(1L).orderNo("OUT-20260511-001")
+                .customerName("客户X").status("COMPLETED")
+                .items(List.of(OutboundOrderResponse.OutboundItemResponse.builder()
+                        .productId(1L).productName("蓝牙耳机 Pro")
+                        .quantity(10).locationCode("WH-A-01-01").build()))
+                .createdAt(LocalDateTime.now()).build();
+
+        when(inventoryService.createOutboundOrder(any())).thenReturn(response);
+
+        String body = """
+                {
+                    "customerName": "客户X",
+                    "items": [
+                        { "productId": 1, "quantity": 10, "locationCode": "WH-A-01-01" }
+                    ]
+                }""";
+
+        mockMvc.perform(post("/api/outbound-orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.orderNo").value("OUT-20260511-001"))
+                .andExpect(jsonPath("$.data.items[0].productName").value("蓝牙耳机 Pro"));
+    }
+
+    @Test
+    void createOutboundOrder_shouldReturnErrorWhenInsufficientStock() throws Exception {
+        when(inventoryService.createOutboundOrder(any()))
+                .thenThrow(new BusinessException("库存不足: 蓝牙耳机 Pro @ WH-A-01-01"));
+
+        String body = """
+                {
+                    "customerName": "客户X",
+                    "items": [
+                        { "productId": 1, "quantity": 999, "locationCode": "WH-A-01-01" }
+                    ]
+                }""";
+
+        mockMvc.perform(post("/api/outbound-orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400))
+                .andExpect(jsonPath("$.message").value("库存不足: 蓝牙耳机 Pro @ WH-A-01-01"));
+    }
+
+    @Test
+    void createOutboundOrder_shouldFailWhenCustomerNameEmpty() throws Exception {
+        String body = """
+                {
+                    "customerName": "",
+                    "items": [
+                        { "productId": 1, "quantity": 10, "locationCode": "WH-A-01-01" }
+                    ]
+                }""";
+
+        mockMvc.perform(post("/api/outbound-orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
     }
 }

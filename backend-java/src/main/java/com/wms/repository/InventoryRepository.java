@@ -30,6 +30,18 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
                         @Param("locationCode") String locationCode,
                         @Param("quantity") int quantity);
 
+    @Modifying
+    @Query(value = """
+        UPDATE inventory
+        SET quantity = quantity - :quantity, updated_at = NOW()
+        WHERE product_id = :productId
+          AND location_code = :locationCode
+          AND quantity >= :quantity
+        """, nativeQuery = true)
+    int deductQuantity(@Param("productId") Long productId,
+                       @Param("locationCode") String locationCode,
+                       @Param("quantity") int quantity);
+
     @Query("""
         SELECT new com.wms.dto.InventoryResponse(
             i.productId, p.name, p.sku, i.locationCode, w.name, i.quantity, i.updatedAt

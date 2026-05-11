@@ -6,6 +6,8 @@ import com.wms.dto.InboundOrderCreateRequest;
 import com.wms.dto.InboundOrderListResponse;
 import com.wms.dto.InboundOrderResponse;
 import com.wms.dto.InventoryResponse;
+import com.wms.dto.OutboundOrderCreateRequest;
+import com.wms.dto.OutboundOrderResponse;
 import com.wms.service.InventoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,12 @@ public class InventoryController {
     @GetMapping("/inbound-orders/{id}")
     public ApiResponse<InboundOrderResponse> getInboundOrder(@PathVariable Long id) {
         return ApiResponse.success(inventoryService.getInboundOrderById(id));
+    }
+
+    @PostMapping("/outbound-orders")
+    public ApiResponse<OutboundOrderResponse> createOutboundOrder(@Valid @RequestBody OutboundOrderCreateRequest request) {
+        OutboundOrderResponse response = inventoryService.createOutboundOrder(request);
+        return ApiResponse.success("出库单创建成功", response);
     }
 
     @GetMapping("/inventory")
