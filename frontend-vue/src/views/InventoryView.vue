@@ -102,7 +102,6 @@ const getCellClass = ({ row, column }: any) => {
         :data="list"
         v-loading="loading"
         border
-        stripe
         :row-class-name="getRowClass"
         :cell-class-name="getCellClass"
         empty-text="暂无库存数据"
