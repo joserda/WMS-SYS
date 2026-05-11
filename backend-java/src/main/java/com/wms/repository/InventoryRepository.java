@@ -17,6 +17,8 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
     Optional<Inventory> findByProductIdAndLocationCode(Long productId, String locationCode);
 
+    long countByProductId(Long productId);
+
     @Modifying
     @Query(value = """
         INSERT INTO inventory (product_id, location_code, quantity)
