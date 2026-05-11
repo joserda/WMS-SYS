@@ -75,3 +75,15 @@ export const createInboundOrder = (data: {
   items: InboundItemRequest[]
 }) =>
   api.post<any, { code: number; message: string; data: any }>('/inbound-orders', data)
+
+export interface OutboundItemRequest {
+  productId: number
+  quantity: number
+  locationCode: string
+}
+
+export const createOutboundOrder = (data: {
+  customerName: string
+  items: OutboundItemRequest[]
+}) =>
+  api.post<any, { code: number; message: string; data: any }>('/outbound-orders', data)
