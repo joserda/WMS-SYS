@@ -1,12 +1,14 @@
 package com.wms.service;
 
 import com.wms.common.BusinessException;
+import com.wms.common.PageResult;
 import com.wms.dto.InboundOrderCreateRequest;
+import com.wms.dto.InboundOrderListResponse;
 import com.wms.dto.InboundOrderResponse;
+import com.wms.dto.InboundItemRequest;
 import com.wms.dto.InventoryResponse;
 import com.wms.entity.InboundOrder;
 import com.wms.entity.InboundOrderItem;
-import com.wms.dto.InboundItemRequest;
 import com.wms.entity.Product;
 import com.wms.repository.InboundOrderItemRepository;
 import com.wms.repository.InboundOrderRepository;
@@ -15,6 +17,9 @@ import com.wms.repository.LocationRepository;
 import com.wms.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +28,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -106,6 +112,56 @@ public class InventoryService {
         long count = inboundOrderRepository.countTodayOrders(todayStart, tomorrowStart);
         String datePart = today.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         return String.format("IN-%s-%03d", datePart, count + 1);
+    }
+
+    public PageResult<InboundOrderListResponse> queryInboundOrders(int page, int pageSize) {
+        PageRequest pageRequest = PageRequest.of(page - 1, pageSize, Sort.by("createdAt").descending());
+        Page<InboundOrder> orderPage = inboundOrderRepository.findAll(pageRequest);
+
+        List<InboundOrderListResponse> list = orderPage.getContent().stream()
+                .map(order -> {
+                    int itemCount = inboundOrderItemRepository.findByOrderId(order.getId()).size();
+                    return InboundOrderListResponse.builder()
+                            .id(order.getId())
+                            .orderNo(order.getOrderNo())
+                            .supplierName(order.getSupplierName())
+                            .status(order.getStatus())
+                            .itemCount(itemCount)
+                            .createdAt(order.getCreatedAt())
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return new PageResult<>(list, orderPage.getTotalElements(), page, pageSize);
+    }
+
+    public InboundOrderResponse getInboundOrderById(Long id) {
+        InboundOrder order = inboundOrderRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(404, "入库单不存在: id=" + id));
+
+        List<InboundOrderItem> orderItems = inboundOrderItemRepository.findByOrderId(id);
+
+        List<InboundOrderResponse.InboundItemResponse> itemResponses = new ArrayList<>();
+        for (InboundOrderItem item : orderItems) {
+            Product product = productRepository.findById(item.getProductId())
+                    .orElse(null);
+            String productName = product != null ? product.getName() : "未知商品";
+            itemResponses.add(InboundOrderResponse.InboundItemResponse.builder()
+                    .productId(item.getProductId())
+                    .productName(productName)
+                    .quantity(item.getQuantity())
+                    .locationCode(item.getLocationCode())
+                    .build());
+        }
+
+        return InboundOrderResponse.builder()
+                .id(order.getId())
+                .orderNo(order.getOrderNo())
+                .supplierName(order.getSupplierName())
+                .status(order.getStatus())
+                .items(itemResponses)
+                .createdAt(order.getCreatedAt())
+                .build();
     }
 
     public List<InventoryResponse> queryInventory(String keyword, Long warehouseId,
