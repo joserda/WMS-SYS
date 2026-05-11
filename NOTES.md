@@ -197,3 +197,41 @@ WHERE product_id = :productId
 - [x] Git 提交记录清晰（小步提交，message 有意义）
 - [x] `NOTES.md` 已填写
 - [x] 选做任务已在 NOTES.md 中说明
+
+---
+
+## 九、AI 工具使用与开发反思
+
+### 1. 使用了哪些 AI 工具？如何使用的？
+
+本次开发全程使用 **Trae AI（Claude 模型）** 作为核心编码助手，具体使用方式：
+
+| 阶段 | AI 使用方式 |
+|------|------------|
+| **需求分析** | 用 brainstorming skill 逐轮澄清需求范围，避免一次性过度设计 |
+| **方案设计** | 每个任务先让 AI 提出 2-3 种方案对比（如入库的 JPA vs PG UPSERT），再人工决策 |
+| **设计文档** | AI 生成接口设计 spec → 人工审阅确认 → 提交 git |
+| **编码实现** | AI 直接写出全部代码（实体/Repository/Service/Controller），人工仅确认关键决策 |
+| **单元测试** | AI 编写 Mock + MockMvc 测试用例，21/21 全部通过 |
+| **前端页面** | 使用 frontend-design skill 生成组件，适配现有 Element Plus 风格 |
+| **UI 优化** | AI 提出 "Precision Lab" 亮色科技风方案，全局 CSS 覆盖，不改组件业务代码 |
+| **Git 管理** | 每个独立功能小步提交，AI 自动生成语义化 commit message |
+
+### 2. 遇到了什么问题？如何解决的？
+
+| 问题 | 解决方式 |
+|------|---------|
+| **Maven 编译权限错误** | 系统 Maven 仓库在 `C:\Program Files\` 下无写权限，改用 IDE 内建 Maven 运行 |
+| **Lombok + JDK21 兼容性** | Maven 不自动启用注解处理器，在 `pom.xml` 中显式配置 `annotationProcessorPaths` + `-proc:full` |
+| **`InboundItemRequest` 编译错误** | 原代码中该类为 package-private，改为 `public` 并拆分为独立文件 |
+| **库存列表低库存高亮不生效** | `el-table` 的 `stripe` 属性 CSS 优先级覆盖自定义样式，移除 `stripe` 解决 |
+| **页面大片空白** | 卡片 `max-width: 960px` 在大屏太小，改为 `1400px + width: 100%` 自适应 + 最小高度 |
+
+### 3. 如果有更多时间，你还会做什么？
+
+- **出库单 & 入库单详情页**：列表中点击单号弹出详情浮窗，展示明细和操作日志
+- **权限与用户管理**：不同角色（采购/仓管/管理员）的菜单和操作权限隔离
+- **库存盘点**：对比系统库存与实际盘点，自动生成盈亏单
+- **告警通知**：库存低于安全线时自动钉钉/邮件通知
+- **E2E 测试**：用 Playwright 覆盖核心业务流程（入库→查库存→出库→验证扣减）
+- **Docker 化部署**：前后端都打包为 Docker 镜像，`docker-compose up` 一键启动全部服务
